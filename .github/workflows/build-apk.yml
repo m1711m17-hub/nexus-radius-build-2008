@@ -1,3 +1,4 @@
+
 name: Build NEXUS RADIUS APK
 on:
   workflow_dispatch:
@@ -10,43 +11,43 @@ jobs:
       - name: Generate project files
         run: |
           mkdir -p "$(dirname settings.gradle)"
-          cat > settings.gradle <<'NEXUS_EOF'
+          cat > settings.gradle << NEXUS_EOF 
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
-          rootProject.name = 'NEXUS RADIUS'
-          include ':app'
+          rootProject.name =  NEXUS RADIUS 
+          include  :app 
           NEXUS_EOF
           mkdir -p "$(dirname build.gradle)"
-          cat > build.gradle <<'NEXUS_EOF'
+          cat > build.gradle << NEXUS_EOF 
           plugins {
-              id 'com.android.application' version '8.6.1' apply false
+              id  com.android.application  version  8.6.1  apply false
           }
           NEXUS_EOF
           mkdir -p "$(dirname gradle.properties)"
-          cat > gradle.properties <<'NEXUS_EOF'
+          cat > gradle.properties << NEXUS_EOF 
           org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
           android.useAndroidX=true
           NEXUS_EOF
           mkdir -p "$(dirname app/build.gradle)"
-          cat > app/build.gradle <<'NEXUS_EOF'
+          cat > app/build.gradle << NEXUS_EOF 
           plugins {
-              id 'com.android.application'
+              id  com.android.application 
           }
 
           android {
-              namespace 'com.nexus.radius'
+              namespace  com.nexus.radius 
               compileSdk 35
               defaultConfig {
-                  applicationId 'com.nexus.radius'
+                  applicationId  com.nexus.radius 
                   minSdk 23
                   targetSdk 28
                   versionCode 1
-                  versionName '1.0'
+                  versionName  1.0 
               }
           }
           NEXUS_EOF
           mkdir -p "$(dirname app/src/main/AndroidManifest.xml)"
-          cat > app/src/main/AndroidManifest.xml <<'NEXUS_EOF'
+          cat > app/src/main/AndroidManifest.xml << NEXUS_EOF 
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-permission android:name="android.permission.INTERNET" />
             <application android:theme="@android:style/Theme.Material.Light.NoActionBar" android:label="NEXUS RADIUS" android:usesCleartextTraffic="true">
@@ -57,7 +58,7 @@ jobs:
           </manifest>
           NEXUS_EOF
           mkdir -p "$(dirname app/src/main/java/com/nexus/radius/MainActivity.java)"
-          cat > app/src/main/java/com/nexus/radius/MainActivity.java <<'NEXUS_EOF'
+          cat > app/src/main/java/com/nexus/radius/MainActivity.java << NEXUS_EOF 
           package com.nexus.radius;
           import android.app.Activity;
           import android.os.Bundle;
@@ -84,12 +85,12 @@ jobs:
               w.setWebViewClient(new WebViewClient() {
                 @Override public void onReceivedError(WebView v, WebResourceRequest r, WebResourceError e) {
                   if (r.isForMainFrame()) {
-                    String html = "<html dir='rtl'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head>"
-                      + "<body style='background:#080f20;color:#edf5ff;font-family:sans-serif;padding:24px'>"
+                    String html = "<html dir= rtl ><head><meta charset= utf-8 ><meta name= viewport  content= width=device-width, initial-scale=1 ></head>"
+                      + "<body style= background:#080f20;color:#edf5ff;font-family:sans-serif;padding:24px >"
                       + "<h2>تعذر الاتصال بالسيرفر</h2>"
                       + "<p>تأكد أن الجوال على نفس شبكة السيرفر وأن العنوان صحيح:</p>"
-                      + "<p dir='ltr'>" + URL + "</p>"
-                      + "<p><a style='color:#66d8ff;font-size:20px' href='" + URL + "'>إعادة المحاولة</a></p></body></html>";
+                      + "<p dir= ltr >" + URL + "</p>"
+                      + "<p><a style= color:#66d8ff;font-size:20px  href= " + URL + " >إعادة المحاولة</a></p></body></html>";
                     v.loadDataWithBaseURL(null, html, "text/html", "utf-8", null);
                   }
                 }
@@ -103,4 +104,23 @@ jobs:
               w.saveState(out);
             }
 
-            @Override public void
+            @Override public void onBackPressed() {
+              if (w.canGoBack()) w.goBack(); else super.onBackPressed();
+            }
+          }
+          NEXUS_EOF
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version:  17 
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version:  8.9 
+      - name: Build debug APK
+        run: gradle assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NEXUS-RADIUS-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
