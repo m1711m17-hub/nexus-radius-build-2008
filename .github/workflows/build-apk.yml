@@ -50,7 +50,7 @@ jobs:
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-permission android:name="android.permission.INTERNET" />
             <application android:theme="@android:style/Theme.Material.Light.NoActionBar" android:label="NEXUS RADIUS" android:usesCleartextTraffic="true">
-              <activity android:name=".MainActivity" android:exported="true">
+              <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboardHidden">
                 <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
               </activity>
             </application>
@@ -61,43 +61,46 @@ jobs:
           package com.nexus.radius;
           import android.app.Activity;
           import android.os.Bundle;
+          import android.webkit.WebResourceError;
+          import android.webkit.WebResourceRequest;
+          import android.webkit.WebSettings;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
 
           public class MainActivity extends Activity {
+            static final String URL = "http://192.168.192.192/radiusmanager/admin.php";
+            WebView w;
+
             @Override public void onCreate(Bundle b) {
               super.onCreate(b);
-              WebView w = new WebView(this);
-              w.getSettings().setJavaScriptEnabled(true);
-              w.setWebViewClient(new WebViewClient());
+              w = new WebView(this);
+              WebSettings s = w.getSettings();
+              s.setJavaScriptEnabled(true);
+              s.setDomStorageEnabled(true);
+              s.setBuiltInZoomControls(true);
+              s.setDisplayZoomControls(false);
+              s.setUseWideViewPort(true);
+              s.setLoadWithOverviewMode(true);
+              w.setWebViewClient(new WebViewClient() {
+                @Override public void onReceivedError(WebView v, WebResourceRequest r, WebResourceError e) {
+                  if (r.isForMainFrame()) {
+                    String html = "<html dir='rtl'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head>"
+                      + "<body style='background:#080f20;color:#edf5ff;font-family:sans-serif;padding:24px'>"
+                      + "<h2>تعذر الاتصال بالسيرفر</h2>"
+                      + "<p>تأكد أن الجوال على نفس شبكة السيرفر وأن العنوان صحيح:</p>"
+                      + "<p dir='ltr'>" + URL + "</p>"
+                      + "<p><a style='color:#66d8ff;font-size:20px' href='" + URL + "'>إعادة المحاولة</a></p></body></html>";
+                    v.loadDataWithBaseURL(null, html, "text/html", "utf-8", null);
+                  }
+                }
+              });
               setContentView(w);
-              w.loadUrl("file:///android_asset/app.html");
+              if (b != null) w.restoreState(b); else w.loadUrl(URL);
             }
-          }
-          NEXUS_EOF
-          mkdir -p "$(dirname app/src/main/assets/app.html)"
-          cat > app/src/main/assets/app.html <<'NEXUS_EOF'
-          <!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>NEXUS RADIUS</title>
-          <style>
-          *{box-sizing:border-box}body{margin:0;background:#080f20;color:#edf5ff;font-family:Arial,sans-serif}header{padding:26px 20px 18px;background:linear-gradient(140deg,#101c36,#15284a);border-bottom:1px solid #263c61}h1{margin:0;color:#66d8ff;font-size:24px;letter-spacing:1px}header p{color:#9db4d1;margin:8px 0 0;font-size:13px}.wrap{padding:16px;max-width:720px;margin:auto}.card{background:#101a2d;border:1px solid #223653;border-radius:17px;padding:17px;margin-bottom:14px;box-shadow:0 8px 22px #0002}h2{font-size:17px;margin:0 0 12px}.label{font-size:12px;color:#a8bdd9;margin:10px 0 6px}input{width:100%;background:#0b1426;border:1px solid #2a4062;border-radius:10px;padding:12px;color:white;font-size:15px;outline:none}button{border:0;border-radius:11px;padding:13px 12px;background:linear-gradient(100deg,#28b8e9,#7864ee);color:#fff;font-weight:bold;font-size:15px;width:100%;margin-top:12px}button.secondary{background:#182741;border:1px solid #314a70;color:#d7e7ff}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tile{padding:15px;border-radius:14px;background:#0c1629;border:1px solid #263b5a}.tile strong{display:block;font-size:13px}.tile span{color:#8ca7c7;font-size:12px;display:block;margin-top:7px}.notice{font-size:12px;color:#a8bdd9;line-height:1.7}.status{font-size:13px;color:#9eb9d8;margin-top:10px;min-height:18px}.footer{text-align:center;color:#657e9f;font-size:11px;padding:20px}
-          </style></head><body><header><h1>NEXUS RADIUS</h1><p>لوحة مراقبة وإدارة قراءة فقط</p></header><main class="wrap">
-          <section class="card"><h2>اتصال Radius Manager</h2><div class="label">عنوان السيرفر / IP</div><input id="url" placeholder="http://192.168.x.x/" value="http://192.168.192.192/radiusmanager/admin.php"><div class="label">اسم المستخدم</div><input id="user" placeholder="Username"><div class="label">كلمة المرور</div><input id="pass" type="password" placeholder="Password"><button onclick="test()">فحص الاتصال</button><div class="status" id="status">لم يتم فحص الاتصال بعد.</div><p class="notice">تنبيه: هذه النسخة واجهة أولية. فحص الاتصال المباشر يحتاج endpoint/API من لوحة Radius Manager؛ لا ترسل بيانات الدخول إلى أي جهة خارجية.</p></section>
-          <section class="card"><h2>المراقبة</h2><div class="grid"><div class="tile"><strong>المشتركون</strong><span>بانتظار ربط مصدر البيانات</span></div><div class="tile"><strong>المتصلون الآن</strong><span>بانتظار ربط مصدر البيانات</span></div><div class="tile"><strong>الباقات والسرعات</strong><span>بانتظار ربط مصدر البيانات</span></div><div class="tile"><strong>الاشتراكات والانتهاء</strong><span>بانتظار ربط مصدر البيانات</span></div></div></section>
-          <section class="card"><h2>صلاحيات التطبيق</h2><p class="notice">قراءة فقط. لا توجد وظائف لتعديل أو حذف الحسابات أو تغيير السرعات أو تنفيذ عمليات دفع.</p></section><div class="footer">NEXUS RADIUS · Read-only starter</div></main>
-          <script>function test(){let s=document.getElementById('status');let url=document.getElementById('url').value.trim();if(!url){s.textContent='أدخل عنوان السيرفر أولاً';return;}s.textContent='واجهة فحص الاتصال جاهزة؛ لم يتم تنفيذ اتصال API بعد (يلزم endpoint الخاص بلوحة Radius Manager).';}</script></body></html>
-          NEXUS_EOF
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
-      - name: Build debug APK
-        run: gradle assembleDebug
-      - uses: actions/upload-artifact@v4
-        with:
-          name: NEXUS-RADIUS-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+            @Override protected void onSaveInstanceState(Bundle out) {
+              super.onSaveInstanceState(out);
+              w.saveState(out);
+            }
+
+            @Override public void
